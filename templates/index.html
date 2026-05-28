@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>8D Audio Converter</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0f;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+
+    .bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .bg span {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.12;
+      animation: float 10s infinite ease-in-out;
+    }
+    .bg span:nth-child(1) {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, #7b2fff, transparent);
+      top: -200px; left: -200px;
+    }
+    .bg span:nth-child(2) {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #00cfff, transparent);
+      bottom: -150px; right: -150px;
+      animation-delay: 4s;
+    }
+    .bg span:nth-child(3) {
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, #ff2fff, transparent);
+      top: 40%; left: 40%;
+      animation-delay: 7s;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-40px) scale(1.08); }
+    }
+
+    header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 60px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon { font-size: 32px; }
+    .logo-text {
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #7b2fff, #00cfff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .badge {
+      background: rgba(123,47,255,0.15);
+      border: 1px solid rgba(123,47,255,0.3);
+      color: #a97fff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: calc(100vh - 80px);
+    }
+
+    .left-panel {
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .tagline {
+      font-size: 0.9rem;
+      color: #7b2fff;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    h1 span {
+      background: linear-gradient(135deg, #7b2fff, #00cfff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .description {
+      color: rgba(255,255,255,0.45);
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      max-width: 420px;
+    }
+    .features {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: rgba(255,255,255,0.6);
+      font-size: 0.92rem;
+    }
+    .feature-icon {
+      width: 36px; height: 36px;
+      background: rgba(123,47,255,0.12);
+      border: 1px solid rgba(123,47,255,0.25);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .right-panel {
+      padding: 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 24px;
+    }
+    .panel-title {
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .panel-sub {
+      color: rgba(255,255,255,0.35);
+      font-size: 0.88rem;
+    }
+
+    .upload-area {
+      border: 2px dashed rgba(123,47,255,0.4);
+      border-radius: 20px;
+      padding: 40px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      text-align: center;
+      background: rgba(123,47,255,0.04);
+    }
+    .upload-area:hover, .upload-area.dragover {
+      border-color: #7b2fff;
+      background: rgba(123,47,255,0.1);
+    }
+    .upload-area input {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .upload-icon { font-size: 44px; margin-bottom: 14px; }
+    .upload-main {
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .upload-main span { color: #7b2fff; }
+    .upload-sub {
+      color: rgba(255,255,255,0.3);
+      font-size: 0.82rem;
+    }
+
+    .selected-file {
+      background: rgba(0,207,255,0.07);
+      border: 1px solid rgba(0,207,255,0.2);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: #00cfff;
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+    .selected-file.visible { display: flex; }
+
+    .buttons-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .btn {
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      font-size: 0.98rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    .btn-convert {
+      background: linear-gradient(135deg, #7b2fff, #5500cc);
+      color: white;
+      box-shadow: 0 4px 20px rgba(123,47,255,0.35);
+    }
+    .btn-convert:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(123,47,255,0.55);
+    }
+    .btn-download {
+      background: linear-gradient(135deg, #00cfff, #0088bb);
+      color: white;
+      box-shadow: 0 4px 20px rgba(0,207,255,0.25);
+    }
+    .btn-download:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,207,255,0.45);
+    }
+
+    .loading-box {
+      display: none;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .loading-box.visible { display: block; }
+    .loading-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .spinner {
+      width: 24px; height: 24px;
+      border: 3px solid rgba(123,47,255,0.2);
+      border-top-color: #7b2fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title {
+      color: white;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+    .loading-step {
+      color: rgba(255,255,255,0.4);
+      font-size: 0.82rem;
+      margin-top: 2px;
+    }
+    .progress-track {
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #7b2fff, #00cfff);
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      color: rgba(255,255,255,0.25);
+      font-size: 0.75rem;
+    }
+    .progress-steps span.active {
+      color: #7b2fff;
+      font-weight: 600;
+    }
+
+    .success-box {
+      background: rgba(0,255,150,0.05);
+      border: 1px solid rgba(0,255,150,0.2);
+      border-radius: 16px;
+      padding: 20px;
+      color: #00ff96;
+      font-size: 0.9rem;
+      display: none;
+      align-items: center;
+      gap: 12px;
+    }
+    .success-box.visible { display: flex; }
+    .success-icon { font-size: 28px; }
+
+    .tip-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,200,0,0.05);
+      border: 1px solid rgba(255,200,0,0.15);
+      border-radius: 12px;
+      padding: 14px 18px;
+      color: rgba(255,200,0,0.7);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg">
+    <span></span><span></span><span></span>
+  </div>
+
+  <header>
+    <div class="logo">
+      <span class="logo-icon">🎧</span>
+      <span class="logo-text">8D Audio Converter</span>
+    </div>
+    <div class="badge">✨ Free Forever</div>
+  </header>
+
+  <main>
+    <div class="left-panel">
+      <div class="tagline">Next-gen audio experience</div>
+      <h1>Turn any song into <span>8D Audio</span></h1>
+      <p class="description">
+        Upload your favourite song and experience it rotating around your head in full 3D space. Real binaural processing — not just a cheap panning trick.
+      </p>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🎵</div>
+          Supports MP3 and WAV formats
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔄</div>
+          Real binaural rotation effect
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🌊</div>
+          Deep reverb and spatial depth
+        </div>
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          Fast processing — no waiting forever
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔒</div>
+          Your song is never stored or shared
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div>
+        <div class="panel-title">Convert Your Song</div>
+        <div class="panel-sub">Upload a file to get started</div>
+      </div>
+
+      <div class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept=".wav,.mp3" />
+        <div class="upload-icon">🎵</div>
+        <div class="upload-main">Drop your song here or <span>browse files</span></div>
+        <div class="upload-sub">MP3 or WAV • Max 50MB</div>
+      </div>
+
+      <div class="selected-file" id="selectedFile">
+        <span>🎵</span>
+        <span id="fileName">No file selected</span>
+      </div>
+
+      <div class="buttons-row">
+        <button class="btn btn-convert" id="convertBtn" disabled>
+          🎧 Convert to 8D
+        </button>
+        <button class="btn btn-download" id="downloadBtn" disabled>
+          ⬇️ Download Song
+        </button>
+      </div>
+
+      <div class="loading-box" id="loadingBox">
+        <div class="loading-header">
+          <div class="spinner"></div>
+          <div>
+            <div class="loading-title">Converting to 8D — this may take a few minutes ⏳</div>
+            <div class="loading-step" id="loadingStep">Analysing audio file</div>
+          </div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-steps">
+          <span id="step1" class="active">Analysing</span>
+          <span id="step2">Applying 8D</span>
+          <span id="step3">Adding Reverb</span>
+          <span id="step4">Finalising</span>
+        </div>
+      </div>
+
+      <div class="success-box" id="successBox">
+  <div style="width:100%">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+      <span class="success-icon">✅</span>
+      <div>
+        <div style="font-weight:700; margin-bottom:4px;">8D Song Ready!</div>
+        <div style="color:rgba(0,255,150,0.6); font-size:0.82rem;">
+          Preview below or download. Use headphones! 🎧
+        </div>
+      </div>
+    </div>
+    <!-- Audio Preview Player -->
+    <audio id="audioPreview" controls style="
+      width: 100%;
+      border-radius: 12px;
+      outline: none;
+      accent-color: #7b2fff;
+    "></audio>
+  </div>
+</div>
+
+      <div class="tip-box">
+        🎧 Always use <strong style="margin: 0 4px;">headphones or earphones</strong> to feel the full 8D effect!
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const fileInput    = document.getElementById('fileInput');
+    const uploadArea   = document.getElementById('uploadArea');
+    const selectedFile = document.getElementById('selectedFile');
+    const fileName     = document.getElementById('fileName');
+    const convertBtn   = document.getElementById('convertBtn');
+    const downloadBtn  = document.getElementById('downloadBtn');
+    const loadingBox   = document.getElementById('loadingBox');
+    const successBox   = document.getElementById('successBox');
+    const progressFill = document.getElementById('progressFill');
+    const loadingStep  = document.getElementById('loadingStep');
+
+    let downloadUrl = null;
+
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) {
+        fileName.textContent = fileInput.files[0].name;
+        selectedFile.classList.add('visible');
+        convertBtn.disabled = false;
+        downloadBtn.disabled = true;
+        successBox.classList.remove('visible');
+      }
+    });
+
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      fileInput.files = e.dataTransfer.files;
+      fileInput.dispatchEvent(new Event('change'));
+    });
+
+    function simulateProgress() {
+      const steps = [
+        { pct: 20, label: 'Analysing audio file...', active: 'step1' },
+        { pct: 45, label: 'Applying 8D rotation...', active: 'step2' },
+        { pct: 75, label: 'Adding reverb and depth...', active: 'step3' },
+        { pct: 92, label: 'Finalising your song...', active: 'step4' },
+      ];
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= steps.length) { clearInterval(interval); return; }
+        progressFill.style.width = steps[i].pct + '%';
+        loadingStep.textContent = steps[i].label;
+        ['step1','step2','step3','step4'].forEach(s => {
+          document.getElementById(s).classList.remove('active');
+        });
+        document.getElementById(steps[i].active).classList.add('active');
+        i++;
+      }, 2000);
+      return interval;
+    }
+
+    convertBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      convertBtn.disabled = true;
+      downloadBtn.disabled = true;
+      loadingBox.classList.add('visible');
+      successBox.classList.remove('visible');
+      progressFill.style.width = '5%';
+
+      const timer = simulateProgress();
+      const formData = new FormData();
+      formData.append('song', file);
+
+      try {
+        const response = await fetch('/convert', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+        const jobId = data.job_id;
+
+        // Show wait message
+loadingStep.textContent = 'Conversion can take time kindly wait...';
+        const poll = setInterval(async () => {
+          const statusRes = await fetch(`/status/${jobId}`);
+          const statusData = await statusRes.json();
+
+          if (statusData.status === 'done') {
+            clearInterval(poll);
+            clearInterval(timer);
+            progressFill.style.width = '100%';
+           downloadUrl = `/download/${jobId}`;
+
+// Set preview player source
+const preview = document.getElementById('audioPreview');
+preview.src = downloadUrl;
+preview.load();
+            setTimeout(() => {
+              loadingBox.classList.remove('visible');
+              successBox.classList.add('visible');
+              downloadBtn.disabled = false;
+              convertBtn.disabled = false;
+            }, 500);
+          } else if (statusData.status === 'error') {
+            clearInterval(poll);
+            clearInterval(timer);
+            loadingBox.classList.remove('visible');
+            alert('Something went wrong! Please try again.');
+            convertBtn.disabled = false;
+          }
+        }, 2000);
+
+      } catch (err) {
+        clearInterval(timer);
+        loadingBox.classList.remove('visible');
+        alert('Something went wrong! Please try again.');
+        convertBtn.disabled = false;
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!downloadUrl) return;
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = 'song_8d.wav';
+      a.click();
+    });
+  </script>
+</body>
+</html>
