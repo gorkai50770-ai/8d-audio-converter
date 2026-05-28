@@ -4,3 +4,4 @@ scipy
 librosa
 soundfile
 imageio-ffmpeg
+gunicorn
